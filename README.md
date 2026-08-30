@@ -19,7 +19,7 @@ Instead of manually reading through dozens of job postings and guessing whether 
 ## Tech stack
 
 - Python
-- An async browser automation scraper for job search and listing collection
+- linkedin_scraper - joeyism for job board scraping 
 - BeautifulSoup for HTML-to-text extraction
 - A local compression model (via litellm) to shrink job descriptions before evaluation
 - Google's Gemini API for the structured hiring evaluation
@@ -34,7 +34,9 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Set your API credentials for the evaluation model in the `response` variable (currently using genAi client). The job search scraper also needs a `session.json` file to authenticate, generated as follows:
+Set your API key by replacing the `{Enter Key Here}` placeholder in the `genai.Client()` initialization at the top of the script.
+
+The job search scraper also needs a `session.json` file to authenticate, generated as follows:
 
 1. Run the session-creation script (a small Playwright script that opens a browser, lets you log in manually, then saves the resulting cookies and localStorage).
    ```
@@ -46,7 +48,7 @@ Set your API credentials for the evaluation model in the `response` variable (cu
 
 ## Usage
 
-Update the `job_titles` list with the roles you want to search, point `resume_docx` at your resume file, then run:
+Update the `job_titles` list with the roles you want to search, point `resume_docx` at your resume file, as well as a setting the targeted `location` then run:
 
 ```
 python main.py
