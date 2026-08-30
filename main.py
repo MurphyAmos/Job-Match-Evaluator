@@ -232,11 +232,6 @@ def main(job_title, resume_docx=None, location = None):
                         Below 50: Poor alignment
 
 
-                        INTERVIEW PROBABILITY
-
-                        Estimate the likelihood that this resume would advance to an interview if submitted exactly as provided.
-
-                        This is an informed hiring estimate, NOT a statistical probability.
 
                         Consider:
 
@@ -250,7 +245,7 @@ def main(job_title, resume_docx=None, location = None):
                         Missing requirements
                         Eligibility issues
 
-                        Do not assign a high probability if a clear hard requirement is missing.
+                        Do not assign a high match chance if a clear hard requirement is missing.
 
 
                         CONFIDENCE
@@ -303,8 +298,6 @@ def main(job_title, resume_docx=None, location = None):
                             "job_url": "{link}",
 
                             "match_percentage": 0,
-
-                            "interview_probability": 0,
 
                             "confidence": "High",
 
@@ -385,10 +378,6 @@ def main(job_title, resume_docx=None, location = None):
                         FIELD RULES
 
                         "match_percentage":
-
-                        Integer from 0 to 100.
-
-                        "interview_probability":
 
                         Integer from 0 to 100.
 
