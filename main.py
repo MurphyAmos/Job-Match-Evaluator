@@ -1,12 +1,9 @@
 import os, requests, json
 os.makedirs("outputs", exist_ok=True)
 
-from google import genai
-from google.genai import types
-from google.genai.types import Tool, GoogleSearch, GenerateContentConfig
-client = genai.Client(api_key="{Enter Key Here}")
-
 from docx import Document
+
+from bs4 import BeautifulSoup
 
 import asyncio
 from linkedin_scraper import BrowserManager, PersonScraper ,CompanyScraper, JobSearchScraper
@@ -14,7 +11,14 @@ from linkedin_scraper import BrowserManager, PersonScraper ,CompanyScraper, JobS
 import litellm
 from litellm.types.utils import CallTypes
 
-from bs4 import BeautifulSoup
+from google import genai
+from google.genai import types
+from google.genai.types import Tool, GoogleSearch, GenerateContentConfig
+client = genai.Client(api_key="{Enter Key Here}")
+
+
+
+
 
 link_holder = []
 def get_job_details(url):
@@ -465,7 +469,6 @@ def main(job_title, resume_docx=None, location = None):
 
                         {read_docx(resume_docx)}
                         Evaluate the candidate against the job description.
-
                     """,
                 )
             ##take current response into json 
@@ -491,7 +494,6 @@ def main(job_title, resume_docx=None, location = None):
 
                 with open(f"outputs/{job_title}_Comparison_{i}.text", "w") as f:
                     f.write(y)
-
                 continue
         ##add all found links to link holder for later checks 
         link_holder.extend(found_job_links)
