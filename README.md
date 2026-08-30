@@ -13,7 +13,7 @@ Instead of manually reading through dozens of job postings and guessing whether 
 3. **Compression.** The extracted text is passed through a local compression model (Bonsai-1.7B) to cut it down to a target token count before it ever reaches the evaluation model, keeping prompts small without truncating mid-sentence.
 4. **Resume parsing.** The applicant's resume is read directly from a `.docx` file, paragraph by paragraph, preserving structure.
 5. **Evaluation.** The compressed job description and full resume text are sent to an LLM with a detailed system prompt enforcing evidence-only evaluation, no inferred skills, no assumed technologies, every requirement scored as Strong Match, Partial Match, or Not Demonstrated.
-6. **Structured output.** The model returns a strict JSON schema: match percentage, interview probability, confidence level, a verdict (INTERVIEW / MAYBE INTERVIEW / REJECT), and itemized requirement-by-requirement breakdowns.
+6. **Structured output.** The model returns out a strict JSON schema: match percentage, confidence level, a verdict (INTERVIEW / MAYBE INTERVIEW / REJECT), and itemized requirement-by-requirement breakdowns.
 7. **Filtering & saving.** Postings that come back as REJECT are logged and skipped. Everything else is written to disk as its own JSON file, one per job posting, organized by job title.
 
 ## Tech stack
