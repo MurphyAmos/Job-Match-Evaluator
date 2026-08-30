@@ -444,7 +444,6 @@ def main(job_title, resume_docx=None, location = None):
 
                         A 90% match with a REJECT verdict unless there is a clear hard eligibility blocker.
                         A 40% match with an INTERVIEW verdict.
-                        A high interview probability when a required qualification is clearly missing.
                         A low confidence score when both inputs clearly contain sufficient information.
 
                         Do not inflate scores because the applicant has many projects.
