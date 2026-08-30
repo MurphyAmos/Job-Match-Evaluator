@@ -40,7 +40,7 @@ def get_job_details(url):
     return compressed_text
 
 found_job_links = [] 
-async def search_jobs(title,location,limit):
+async def search_jobs(title,location):
     ##load session data 
     async with BrowserManager(headless=True) as browser:
         await browser.load_session("session.json")
@@ -526,4 +526,4 @@ job_titles = [
 #loop through list, find and compare postings to resume 
 for job in job_titles:
     print(f"Searching for {str(job)} positions")
-    main(job, resume_docx="{docx resume file here}", "{Enter location Here}")
+    main(job, resume_docx="{docx resume file here}",location = "{Enter location Here}")
