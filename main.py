@@ -1,22 +1,20 @@
-import os, requests, json
-os.makedirs("outputs", exist_ok=True)
-
-from docx import Document
-
-from bs4 import BeautifulSoup
 
 import asyncio
-from linkedin_scraper import BrowserManager, PersonScraper ,CompanyScraper, JobSearchScraper
+import json
+import os
 
+import requests
 import litellm
+
+from bs4 import BeautifulSoup
+from docx import Document
+from google import genai
+from linkedin_scraper import BrowserManager, JobSearchScraper
 from litellm.types.utils import CallTypes
 
-from google import genai
-from google.genai import types
-from google.genai.types import Tool, GoogleSearch, GenerateContentConfig
-client = genai.Client(api_key="{Enter Key Here}")
+os.makedirs("outputs", exist_ok=True)
 
-
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 
 
@@ -27,12 +25,12 @@ def get_job_details(url):
     soup = BeautifulSoup(r.text, "html.parser")
     for tag in soup(["script", "style", "noscript"]):
         tag.decompose()
-    ##strip text and feeed parsed/stripped text into prompt compressor 
+    ##strip text and feed parsed/stripped text into prompt compressor 
     text = soup.get_text(" ", strip=True)
     messages = [
     {"role": "user", "content": text}
     ]
-    #anything above 5000 tokens will triger a compression
+    #anything above 5000 tokens will trigger a compression
     compressed = litellm.compress(
         messages=messages,
         model="hf.co/prism-ml/Bonsai-1.7B-gguf",
