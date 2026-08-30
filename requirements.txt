@@ -1,0 +1,6 @@
+requests
+google-genai
+python-docx
+linkedin-scraper
+litellm
+beautifulsoup4
