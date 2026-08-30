@@ -1,4 +1,5 @@
 import os, requests, json
+os.makedirs("outputs", exist_ok=True)
 
 from google import genai
 from google.genai import types
@@ -481,11 +482,11 @@ def main(job_title, resume_docx=None, location = None):
                 )
             ##take current response into json 
             y = response.output_text
+
             try:
                 ##if the verdict is not reject, write output for review
                 json_y = json.loads(y.strip())
                 if json_y["verdict"] != "REJECT":
-                    os.makedirs("outputs", exist_ok=True)
                     with open(f"outputs/{job_title}_Comparison_{i+1}.json", "w") as f:
                         f.write(y)
                     continue
