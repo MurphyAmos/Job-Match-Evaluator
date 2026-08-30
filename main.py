@@ -83,10 +83,10 @@ def read_docx(filePath):
     except Exception as e:
         print(f"Error occurred while reading DOCX file: {e}")
 
-def main(job_title, resume_docx=None):
+def main(job_title, resume_docx=None, location = None):
     global found_job_links
     #pull job listings
-    asyncio.run(search_jobs(job_title,"houston"))
+    asyncio.run(search_jobs(job_title,location))
     if len(found_job_links) != 0:
         #remove any empty strings we find 
         found_job_links = [x for x in found_job_links if x != ""]
@@ -526,4 +526,4 @@ job_titles = [
 #loop through list, find and compare postings to resume 
 for job in job_titles:
     print(f"Searching for {str(job)} positions")
-    main(job, resume_docx="{docx resume file here}")
+    main(job, resume_docx="{docx resume file here}", "{Enter location Here}")
