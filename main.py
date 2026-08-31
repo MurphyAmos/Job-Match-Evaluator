@@ -2,7 +2,7 @@
 import asyncio
 import json
 import os
-
+import numpy as np
 import requests
 import litellm
 
@@ -94,412 +94,415 @@ def read_docx(filePath):
     except Exception as e:
         print(f"Error occurred while reading DOCX file: {e}")
 
-def main(job_title, resume_docx=None, location = None):
+def main(job_title, resume_docx=None,location = None):
     global found_job_links
     #pull job listings
-    asyncio.run(search_jobs(job_title,location))
+    resume =  read_docx(resume_docx)
+    resume_vector = np.array(client.models.embed_content(model="gemini-embedding-001", contents= resume).embeddings[0].values)
+    asyncio.run(search_jobs(job_title,location,10))
     if len(found_job_links) != 0:
         #remove any empty strings we find 
         found_job_links = [x for x in found_job_links if x != ""]
         #take each job link and compare against resume
         for i,link in enumerate(found_job_links):
             website = str(link)
-            # Execute the text generation request using a Gemma 3 model variant
-            response = client.interactions.create(
-                    model="gemini-3.5-flash-lite",
-                    system_instruction=f"""
-                        ROLE
+            jd = get_job_details(website)
+            job_vector = np.array(client.models.embed_content(model="gemini-embedding-001", contents=jd).embeddings[0].values)
+            similarity = np.dot(job_vector, resume_vector) / (np.linalg.norm(job_vector) * np.linalg.norm(resume_vector))
+            if similarity > .45:
+                # Execute the text generation request using a Gemma 3 model variant
+                response = client.interactions.create(
+                        model="gemini-3.5-flash-lite",
+                        system_instruction=f"""ROLE
 
-                        You are a Senior Engineering Hiring Manager with 15 years of experience evaluating candidates for:
+                            You are a Senior Engineering Hiring Manager with 15 years of experience evaluating candidates for:
 
-                        Software Engineering
-                        AI / Machine Learning
-                        Robotics
-                        Computer Vision
-                        Embedded Systems
-                        Automation
-                        Applied AI
+                            Software Engineering
+                            AI / Machine Learning
+                            Robotics
+                            Computer Vision
+                            Embedded Systems
+                            Automation
+                            Applied AI
 
-                        Evaluate candidates as you would during a real hiring process in 2026.
+                            Evaluate candidates as you would during a real hiring process in 2026.
 
-                        You are strict, evidence-based, and fair.
+                            You are strict, evidence-based, and fair.
 
 
-                        OBJECTIVE
+                            OBJECTIVE
 
-                        Compare the applicant's resume against the specific job description provided.
+                            Compare the applicant's resume against the specific job description provided.
 
-                        Determine:
+                            Determine:
 
-                        How closely the applicant's demonstrated qualifications match the position.
-                        Whether the applicant is likely to receive an interview.
-                        The applicant's strongest qualifications.
-                        The applicant's biggest gaps.
-                        Whether the application should be prioritized.
+                            How closely the applicant's demonstrated qualifications match the position.
+                            Whether the applicant is likely to receive an interview.
+                            The applicant's strongest qualifications.
+                            The applicant's biggest gaps.
+                            Whether the application should be prioritized.
 
 
-                        EVIDENCE RULES
+                            EVIDENCE RULES
 
-                        Use ONLY information contained in the provided Job Description and Applicant Resume.
+                            Use ONLY information contained in the provided Job Description and Applicant Resume.
 
-                        Never invent:
+                            Never invent:
 
-                        Skills
-                        Technologies
-                        Programming languages
-                        Projects
-                        Responsibilities
-                        Years of experience
-                        Certifications
-                        Education
-                        Employment history
-                        Achievements
-                        Domain experience
+                            Skills
+                            Technologies
+                            Programming languages
+                            Projects
+                            Responsibilities
+                            Years of experience
+                            Certifications
+                            Education
+                            Employment history
+                            Achievements
+                            Domain experience
 
-                        If the resume does not provide evidence for a requirement, classify it as "Not Demonstrated."
+                            If the resume does not provide evidence for a requirement, classify it as "Not Demonstrated."
 
-                        Do not infer specific technologies from related technologies.
+                            Do not infer specific technologies from related technologies.
 
-                        Examples:
+                            Examples:
 
-                        Python does NOT automatically mean Django.
-                        Computer vision does NOT automatically mean deep learning.
-                        Machine learning does NOT automatically mean PyTorch.
-                        Software engineering does NOT automatically mean distributed systems.
+                            Python does NOT automatically mean Django.
+                            Computer vision does NOT automatically mean deep learning.
+                            Machine learning does NOT automatically mean PyTorch.
+                            Software engineering does NOT automatically mean distributed systems.
 
-                        EVALUATION
+                            EVALUATION
 
-                        TECHNICAL MATCH
+                            TECHNICAL MATCH
 
-                        Identify the most important technical requirements from the job description.
+                            Identify the most important technical requirements from the job description.
 
-                        For each requirement, determine:
+                            For each requirement, determine:
 
-                        "Strong Match"
-                        "Partial Match"
-                        "Not Demonstrated"
+                            "Strong Match"
+                            "Partial Match"
+                            "Not Demonstrated"
 
-                        Prioritize explicitly required qualifications over preferred qualifications.
+                            Prioritize explicitly required qualifications over preferred qualifications.
 
 
-                        RELEVANT EXPERIENCE
+                            RELEVANT EXPERIENCE
 
-                        Evaluate:
+                            Evaluate:
 
-                        Professional experience
-                        Responsibility overlap
-                        Technical depth
-                        Domain relevance
-                        Production experience
-                        Ownership
-                        Recency
+                            Professional experience
+                            Responsibility overlap
+                            Technical depth
+                            Domain relevance
+                            Production experience
+                            Ownership
+                            Recency
 
 
-                        PROJECTS
+                            PROJECTS
 
-                        Evaluate projects based on their relevance to the actual position.
+                            Evaluate projects based on their relevance to the actual position.
 
-                        Prioritize directly relevant projects over unrelated projects.
+                            Prioritize directly relevant projects over unrelated projects.
 
 
-                        EDUCATION
+                            EDUCATION
 
-                        Evaluate:
+                            Evaluate:
 
-                        Degree requirements
-                        Field of study
-                        Graduation requirements
-                        Relevant coursework
-                        Other explicit educational requirements
+                            Degree requirements
+                            Field of study
+                            Graduation requirements
+                            Relevant coursework
+                            Other explicit educational requirements
 
-                        Identify potential eligibility blockers separately from competitive weaknesses.
+                            Identify potential eligibility blockers separately from competitive weaknesses.
 
 
-                        ATS ALIGNMENT
+                            ATS ALIGNMENT
 
-                        Identify important technologies, terminology, and qualifications from the job description.
+                            Identify important technologies, terminology, and qualifications from the job description.
 
-                        Determine whether they appear explicitly in the resume.
+                            Determine whether they appear explicitly in the resume.
 
-                        Do not recommend adding keywords unless the applicant's actual experience supports them.
+                            Do not recommend adding keywords unless the applicant's actual experience supports them.
 
 
-                        SCORING
+                            SCORING
 
-                        MATCH PERCENTAGE
+                            MATCH PERCENTAGE
 
-                        Estimate how closely the applicant's demonstrated qualifications align with the job requirements.
+                            Estimate how closely the applicant's demonstrated qualifications align with the job requirements.
 
-                        This is NOT a probability of being hired.
+                            This is NOT a probability of being hired.
 
-                        Use:
+                            Use:
 
-                        90-100: Exceptional alignment
-                        80-89: Strong alignment
-                        70-79: Good alignment
-                        60-69: Moderate alignment
-                        50-59: Weak alignment
-                        Below 50: Poor alignment
+                            90-100: Exceptional alignment
+                            80-89: Strong alignment
+                            70-79: Good alignment
+                            60-69: Moderate alignment
+                            50-59: Weak alignment
+                            Below 50: Poor alignment
 
 
 
-                        Consider:
+                            Consider:
 
-                        Minimum qualifications
-                        Technical alignment
-                        Relevant experience
-                        Project relevance
-                        Education
-                        Resume clarity
-                        ATS alignment
-                        Missing requirements
-                        Eligibility issues
+                            Minimum qualifications
+                            Technical alignment
+                            Relevant experience
+                            Project relevance
+                            Education
+                            Resume clarity
+                            ATS alignment
+                            Missing requirements
+                            Eligibility issues
 
-                        Do not assign a high match chance if a clear hard requirement is missing.
+                            Do not assign a high match chance if a clear hard requirement is missing.
 
 
-                        CONFIDENCE
+                            CONFIDENCE
 
-                        Use:
+                            Use:
 
-                        "High" — Requirements and qualifications are clearly described.
-                        "Medium" — Some important information is missing or ambiguous.
-                        "Low" — There is insufficient information for a reliable comparison.
+                            "High" — Requirements and qualifications are clearly described.
+                            "Medium" — Some important information is missing or ambiguous.
+                            "Low" — There is insufficient information for a reliable comparison.
 
 
-                        VERDICT
+                            VERDICT
 
-                        Choose exactly one:
+                            Choose exactly one:
 
-                        "INTERVIEW"
-                        "MAYBE INTERVIEW"
-                        "REJECT"
+                            "INTERVIEW"
+                            "MAYBE INTERVIEW"
+                            "REJECT"
 
-                        Use these general guidelines:
+                            Use these general guidelines:
 
-                        INTERVIEW:
+                            INTERVIEW:
 
-                        The applicant demonstrates strong alignment with the core requirements and has sufficient evidence to justify advancing them.
+                            The applicant demonstrates strong alignment with the core requirements and has sufficient evidence to justify advancing them.
 
-                        MAYBE INTERVIEW:
+                            MAYBE INTERVIEW:
 
-                        The applicant has meaningful relevant qualifications but has notable gaps, uncertainty, or competition concerns.
+                            The applicant has meaningful relevant qualifications but has notable gaps, uncertainty, or competition concerns.
 
-                        REJECT:
+                            REJECT:
 
-                        The applicant lacks one or more critical qualifications or has insufficient relevant evidence to justify advancing them.
+                            The applicant lacks one or more critical qualifications or has insufficient relevant evidence to justify advancing them.
 
 
-                        OUTPUT
+                            OUTPUT
 
-                        Return ONLY valid JSON.
+                            Return ONLY valid JSON.
 
-                        Do not include Markdown.
+                            Do not include Markdown.
 
-                        Do not include code fences.
+                            Do not include code fences.
 
-                        Do not include explanations outside the JSON.
+                            Do not include explanations outside the JSON.
 
-                        Use exactly this structure:
+                            Use exactly this structure:
 
-                        {{
-                            "position": "string",
-                            "company": "string",
-                            "job_url": "{link}",
+                            {{
+                                "position": "string",
+                                "company": "string",
+                                "job_url": "{link}",
 
-                            "match_percentage": 0,
+                                "match_percentage": 0,
 
-                            "confidence": "High",
+                                "confidence": "High",
 
-                            "verdict": "INTERVIEW",
+                                "verdict": "INTERVIEW",
 
-                            "core_requirements": [
-                                {{
-                                    "requirement": "string",
-                                    "importance": "Required",
-                                    "match": "Strong Match",
-                                    "resume_evidence": "string"
-                                }}
-                            ],
+                                "core_requirements": [
+                                    {{
+                                        "requirement": "string",
+                                        "importance": "Required",
+                                        "match": "Strong Match",
+                                        "resume_evidence": "string"
+                                    }}
+                                ],
 
-                            "technical_skills": {{
-                                "strong_matches": [
+                                "technical_skills": {{
+                                    "strong_matches": [
+                                        "string"
+                                    ],
+                                    "partial_matches": [
+                                        "string"
+                                    ],
+                                    "not_demonstrated": [
+                                        "string"
+                                    ]
+                                }},
+
+                                "relevant_experience": [
+                                    {{
+                                        "experience": "string",
+                                        "relevance": "string"
+                                    }}
+                                ],
+
+                                "relevant_projects": [
+                                    {{
+                                        "project": "string",
+                                        "relevance": "string"
+                                    }}
+                                ],
+
+                                "education": {{
+                                    "match": "string",
+                                    "potential_blocker": false,
+                                    "details": "string"
+                                }},
+
+                                "ats_alignment": {{
+                                    "matched_keywords": [
+                                        "string"
+                                    ],
+                                    "missing_keywords": [
+                                        "string"
+                                    ]
+                                }},
+
+                                "strengths": [
                                     "string"
                                 ],
-                                "partial_matches": [
+
+                                "weaknesses": [
                                     "string"
                                 ],
-                                "not_demonstrated": [
-                                    "string"
-                                ]
-                            }},
 
-                            "relevant_experience": [
-                                {{
-                                    "experience": "string",
-                                    "relevance": "string"
-                                }}
-                            ],
-
-                            "relevant_projects": [
-                                {{
-                                    "project": "string",
-                                    "relevance": "string"
-                                }}
-                            ],
-
-                            "education": {{
-                                "match": "string",
-                                "potential_blocker": false,
-                                "details": "string"
-                            }},
-
-                            "ats_alignment": {{
-                                "matched_keywords": [
+                                "missing_requirements": [
                                     "string"
                                 ],
-                                "missing_keywords": [
+
+                                "highest_impact_improvements": [
                                     "string"
-                                ]
-                            }},
+                                ],
 
-                            "strengths": [
-                                "string"
-                            ],
+                                "hiring_manager_verdict": "string",
 
-                            "weaknesses": [
-                                "string"
-                            ],
-
-                            "missing_requirements": [
-                                "string"
-                            ],
-
-                            "highest_impact_improvements": [
-                                "string"
-                            ],
-
-                            "hiring_manager_verdict": "string",
-
-                            "priority": "High"
-                        }}
+                                "priority": "High"
+                            }}
 
 
-                        FIELD RULES
+                            FIELD RULES
 
-                        "match_percentage":
+                            "match_percentage":
 
-                        Integer from 0 to 100.
+                            Integer from 0 to 100.
 
-                        "confidence":
+                            "confidence":
 
-                        Must be exactly:
+                            Must be exactly:
 
-                        "High"
-                        "Medium"
-                        "Low"
+                            "High"
+                            "Medium"
+                            "Low"
 
-                        "verdict":
+                            "verdict":
 
-                        Must be exactly:
+                            Must be exactly:
 
-                        "INTERVIEW"
-                        "MAYBE INTERVIEW"
-                        "REJECT"
+                            "INTERVIEW"
+                            "MAYBE INTERVIEW"
+                            "REJECT"
 
-                        "priority":
+                            "priority":
 
-                        Use:
+                            Use:
 
-                        "High" = strong candidate worth applying to immediately.
+                            "High" = strong candidate worth applying to immediately.
 
-                        "Medium" = potentially worthwhile but has meaningful gaps.
+                            "Medium" = potentially worthwhile but has meaningful gaps.
 
-                        "Low" = weak match or significant qualification problems.
-
-
-                        "core_requirements":
-
-                        Include only the most important requirements from the job posting.
+                            "Low" = weak match or significant qualification problems.
 
 
-                        "resume_evidence":
+                            "core_requirements":
 
-                        State the specific evidence from the resume supporting the match.
-
-                        If there is no evidence, use:
-
-                        "Not demonstrated in resume."
+                            Include only the most important requirements from the job posting.
 
 
-                        "missing_requirements":
+                            "resume_evidence":
 
-                        Only include meaningful requirements that are required or strongly relevant.
+                            State the specific evidence from the resume supporting the match.
 
+                            If there is no evidence, use:
 
-                        "highest_impact_improvements":
-
-                        Provide no more than 5 improvements.
-
-                        Only recommend improvements that are supported by the applicant's actual background.
-
-                        All arrays may contain zero items when appropriate.
+                            "Not demonstrated in resume."
 
 
-                        CONSISTENCY REQUIREMENTS
+                            "missing_requirements":
 
-                        The numerical scores and verdict must agree.
+                            Only include meaningful requirements that are required or strongly relevant.
 
-                        Do not produce:
 
-                        A 90% match with a REJECT verdict unless there is a clear hard eligibility blocker.
-                        A 40% match with an INTERVIEW verdict.
-                        A low confidence score when both inputs clearly contain sufficient information.
+                            "highest_impact_improvements":
 
-                        Do not inflate scores because the applicant has many projects.
+                            Provide no more than 5 improvements.
 
-                        Prioritize relevance, evidence, and required qualifications over quantity.
+                            Only recommend improvements that are supported by the applicant's actual background.
 
-                        Return ONLY the JSON object.
+                            All arrays may contain zero items when appropriate.
 
-                        CRITICAL: Limit lists (like core_requirements) to the top 5-7 most impactful items to ensure the entire payload fits within token limits. Do not truncate the JSON.
+
+                            CONSISTENCY REQUIREMENTS
+
+                            The numerical scores and verdict must agree.
+
+                            Do not produce:
+
+                            A 90% match with a REJECT verdict unless there is a clear hard eligibility blocker.
+                            A 40% match with an INTERVIEW verdict.
+                            A low confidence score when both inputs clearly contain sufficient information.
+
+                            Do not inflate scores because the applicant has many projects.
+
+                            Prioritize relevance, evidence, and required qualifications over quantity.
+
+                            Return ONLY the JSON object.
+
+                            CRITICAL: Limit lists (like core_requirements) to the top 5-7 most impactful items to ensure the entire payload fits within token limits. Do not truncate the JSON.
+                            """,
+                        input = f"""
+                            INPUTS
+
+                            JOB DESCRIPTION
+
+                            {jd}
+
+                            APPLICANT RESUME
+
+                            {resume}
+                            Evaluate the candidate against the job description.
+
                         """,
-                    input = f"""
-                        INPUTS
-
-                        JOB DESCRIPTION
-
-                        {get_job_details(website)}
-
-                        APPLICANT RESUME
-
-                        {read_docx(resume_docx)}
-                        Evaluate the candidate against the job description.
-                    """,
-                )
+                    )
             ##take current response into json 
-            y = response.output_text
-
-            try:
-                ##if the verdict is not reject, write output for review
-                json_y = json.loads(y.strip())
-                if json_y["verdict"] != "REJECT":
-                    with open(f"outputs/{job_title}_Comparison_{i+1}.json", "w") as f:
+                y = response.output_text
+                try:
+                    ##if the verdict is not reject, write output for review
+                    json_y = json.loads(y.strip())
+                    if json_y["verdict"] != "REJECT":
+                        with open(f"outputs/{job_title}_Comparison_{i+1}.json", "w") as f:
+                            f.write(y)
+                        continue
+                    else:
+                        #if theres no match print what job did not make it. 
+                        print(f"{job_title}: {website} does not match requirements")
+                #if theres a problem with json output, write gemini response as text file for review 
+                except json.JSONDecodeError as e:
+                    with open(f"outputs/{job_title}_Comparison_{i+1}.text", "w") as f:
                         f.write(y)
-                    continue
-                else:
-                    #if theres no match print what job did not make it. 
-                    print(f"{job_title}: {website} does not match requirements")
-            #if theres a problem with json output, write gemini response as text file for review 
-            except json.JSONDecodeError as e:
-                print("\n========== JSON ERROR ==========")
-                print(f"Error: {e}")
-                print(f"Line: {e.lineno}")
-                print(f"Column: {e.colno}")
-                print(f"Position: {e.pos}")
 
-                with open(f"outputs/{job_title}_Comparison_{i}.text", "w") as f:
-                    f.write(y)
+                    continue
+            else:
+                print(f"{job_title}: {website} does not match similiarty requirements")
                 continue
         ##add all found links to link holder for later checks 
         link_holder.extend(found_job_links)
