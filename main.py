@@ -509,19 +509,16 @@ def main(job_title, resume_docx=None,location = None):
         ##clear the found jobs links for next job type application
         found_job_links.clear()
 job_titles = [
-    "Application Analyst",
-    "Systems Analyst",
-    "Solutions Analyst",
-    "Technology Solutions Analyst",
-    "Functional Analyst",
-    "Digital Analyst",
-    "Technology Associate",
-    "IT Associate",
-    "Engineering Associate",
-    "Software Development Associate",
-    "Application Development Associate",
-    "Computer Analyst",
-    "Information Systems Analyst",
+    "{Enter Job Title}",
+    "{Enter Job Title}",
+    "{Enter Job Title}",
+    "{Enter Job Title}",
+    "{Enter Job Title}",
+    "{Enter Job Title}",
+    "{Enter Job Title}",
+    "{Enter Job Title}",
+    "{Enter Job Title}",
+    
 ]
 #loop through list, find and compare postings to resume 
 for job in job_titles:
