@@ -99,7 +99,7 @@ def main(job_title, resume_docx=None,location = None):
     #pull job listings
     resume =  read_docx(resume_docx)
     resume_vector = np.array(client.models.embed_content(model="gemini-embedding-001", contents= resume).embeddings[0].values)
-    asyncio.run(search_jobs(job_title,location,10))
+    asyncio.run(search_jobs(job_title,location))
     if len(found_job_links) != 0:
         #remove any empty strings we find 
         found_job_links = [x for x in found_job_links if x != ""]
