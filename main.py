@@ -30,7 +30,7 @@ def get_job_details(url):
                    soup.select_one("div.show-more-less-html__markup") or \
                    soup.select_one("div.description__text")
 
-    #Extract text ONLY if we successfully found the container
+    # 2. Extract text ONLY if we successfully found the container
     if jd_container:
         text = jd_container.get_text(" ", strip=True)
     else:
@@ -81,7 +81,7 @@ def read_docx(filePath):
     #return text data 
     data = {"paragraphs": []}
     text = ""
-    # Iterate through doc paragraphs and return out stripped text
+    # Iterate through paragraphs and print text
     try:
         for para in doc.paragraphs:
             if para.text.strip():
@@ -94,7 +94,7 @@ def read_docx(filePath):
     except Exception as e:
         print(f"Error occurred while reading DOCX file: {e}")
 
-def main(job_title, resume_docx=None,location = None):
+def main(job_title, resume_docx=None, location = None):
     global found_job_links
     #pull job listings
     resume =  read_docx(resume_docx)
@@ -497,6 +497,20 @@ def main(job_title, resume_docx=None,location = None):
                         print(f"{job_title}: {website} does not match requirements")
                 #if theres a problem with json output, write gemini response as text file for review 
                 except json.JSONDecodeError as e:
+                    print("\n========== JSON ERROR ==========")
+                    print(f"Error: {e}")
+                    print(f"Line: {e.lineno}")
+                    print(f"Column: {e.colno}")
+                    print(f"Position: {e.pos}")
+
+                    print("\n========== AROUND ERROR ==========")
+                    start = max(0, e.pos - 300)
+                    end = min(len(y), e.pos + 300)
+                    print(y[start:end])
+
+                    print("\n========== END OF RESPONSE ==========")
+                    print(y[-1000:])
+                    print("====================================")
                     with open(f"outputs/{job_title}_Comparison_{i+1}.text", "w") as f:
                         f.write(y)
 
