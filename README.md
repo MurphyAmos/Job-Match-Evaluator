@@ -11,21 +11,32 @@ Instead of manually reading through dozens of job postings and guessing whether 
 1. **Job search.** An async browser session searches for postings matching a given job title and location, collecting a batch of listing URLs.
 2. **Job description extraction.** Each posting's page is fetched and parsed with BeautifulSoup, stripping scripts, styles, and other non-content tags down to plain text.
 3. **Compression.** The extracted text is passed through a local compression model (Bonsai-1.7B) to cut it down to a target token count before it ever reaches the evaluation model, keeping prompts small without truncating mid-sentence.
-4. **Resume parsing.** The applicant's resume is read directly from a `.docx` file, paragraph by paragraph, preserving structure.
-5. **Evaluation.** The compressed job description and full resume text are sent to an LLM with a detailed system prompt enforcing evidence-only evaluation, no inferred skills, no assumed technologies, every requirement scored as Strong Match, Partial Match, or Not Demonstrated.
-6. **Structured output.** The model returns out a strict JSON schema: match percentage, confidence level, a verdict (INTERVIEW / MAYBE INTERVIEW / REJECT), and itemized requirement-by-requirement breakdowns.
-7. **Filtering & saving.** Postings that come back as REJECT are logged and skipped. Everything else is written to disk as its own JSON file, one per job posting, organized by job title.
+5. **Embedding and semantic filtering.** The compressed job description and full resume are embedded using Gemini's embedding model. Their cosine similarity is calculated. Postings below the configured similarity threshold (`0.45` by default) are skipped. This acts as a semantic retrieval gate: only postings meaningfully related to the applicant's experience move forward.
+6. **LLM evaluation.** Qualifying job descriptions and the full resume are sent to Gemini with a detailed system prompt enforcing evidence-only evaluation. The model cannot invent skills, technologies, or experience; each important requirement is scored as **Strong Match**, **Partial Match**, or **Not Demonstrated**.
+7. **Structured output.** The model returns out a strict JSON schema: match percentage, confidence level, a verdict (INTERVIEW / MAYBE INTERVIEW / REJECT), and itemized requirement-by-requirement breakdowns.
+8. **Filtering & saving.** Postings that come back as REJECT are logged and skipped. Everything else is written to disk as its own JSON file, one per job posting, organized by job title.
+
+# Retrieval-Augmented Evaluation Design
+
+This project uses a lightweight RAG-style workflow:
+
+- **Retrieve:** Embed the resume and each job description, then use cosine similarity to identify semantically relevant postings.
+- **Augment:** Provide the retrieved job description alongside the applicant's resume.
+- **Generate/Evaluate:** Use an LLM to produce a detailed, structured hiring assessment grounded only in those two inputs.
+
+The embedding stage is not the final decision-maker. It is a low-cost semantic filter that prevents irrelevant postings from being sent to the more expensive LLM evaluation stage.
+
 
 ## Tech stack
 
 - Python
-- linkedin_scraper - joeyism for job board scraping 
+- `linkedin_scraper` by joeyism for job-board scraping
 - BeautifulSoup for HTML-to-text extraction
-- A local compression model (via litellm) to shrink job descriptions before evaluation
-- Google's Gemini API for the structured hiring evaluation
-- python-docx for resume parsing
-- JSON as the structured evaluation output format
-
+- LiteLLM with Bonsai-1.7B for job-description compression
+- Google Gemini API for embeddings and structured hiring evaluation
+- NumPy for vector operations and cosine similarity
+- `python-docx` for resume parsing
+- JSON for structured evaluation outpu
 ## Setup
 
 Install dependencies:
@@ -48,8 +59,13 @@ The job search scraper also needs a `session.json` file to authenticate, generat
 
 ## Usage
 
-Update the `job_titles` list with the roles you want to search, point `resume_docx` at your resume file, as well as a setting the targeted `location` then run:
+Update the following in `main.py`:
 
+- `job_titles` with the roles you want to search.
+- `resume_docx` with the path to the applicant's `.docx` resume.
+- `location` with the target city or area.
+- The similarity threshold if you want a stricter or broader first-pass filter.
+Then Run:
 ```
 python main.py
 ```
@@ -57,11 +73,15 @@ python main.py
 Results are written to the `outputs/` directory as one JSON file per non-rejected posting, named by job title and index.
 
 ## Known limitations & Next Fixes
-
+- **Single-vector similarity.** The current version compares one full-resume vector to one full-job-description vector. A strong match can occasionally be missed if relevant skills are diluted by unrelated text. 
+- **Fixed similarity threshold.** The `0.45` threshold is a practical starting point, not a universally correct value. 
 - **No retry logic on JSON parse failures.** If the model's output isn't valid JSON, that posting isn't retried, but it isn't lost either, the raw response is still saved to disk as a `.text` file for debugging instead of the usual `.json` output.
 - **Compression model is fixed.** The compression step always targets the same token count regardless of how information-dense the original posting is, which can occasionally cut relevant detail from very long listings.
 - **Scraping is subject to platform Terms of Service.** This is built for personal, individual job-search use, not for redistribution or commercial use of scraped listing data.
 -**No UI.** This runs entirely from the command line. Functional, but every job title, resume path, and setting has to be edited directly in the script, there's no interface for adjusting a run without touching the code.
+
+## Fixed & Updates
+- Added RAG implementation using Gemini embeddings and cosine similarity to prefilter job postings before LLM evaluation.
 
 ## Motivation
 
