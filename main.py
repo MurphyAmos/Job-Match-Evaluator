@@ -25,12 +25,20 @@ def get_job_details(url):
     soup = BeautifulSoup(r.text, "html.parser")
     for tag in soup(["script", "style", "noscript"]):
         tag.decompose()
-    ##strip text and feed parsed/stripped text into prompt compressor 
-    text = soup.get_text(" ", strip=True)
+    ##strip text and feeed parsed/stripped text into prompt compressor 
+    jd_container = soup.find("span", attrs={"data-testid": "expandable-text-box"}) or \
+                   soup.select_one("div.show-more-less-html__markup") or \
+                   soup.select_one("div.description__text")
+
+    #Extract text ONLY if we successfully found the container
+    if jd_container:
+        text = jd_container.get_text(" ", strip=True)
+    else:
+        #if we cant find within the container
+        text = soup.get_text(" ", strip=True)
     messages = [
     {"role": "user", "content": text}
     ]
-    #anything above 5000 tokens will trigger a compression
     compressed = litellm.compress(
         messages=messages,
         model="hf.co/prism-ml/Bonsai-1.7B-gguf",
