@@ -112,6 +112,8 @@ def main(job_title, resume_docx=None, location = None):
                 similarity = np.dot(job_vector, resume_vector) / (np.linalg.norm(job_vector) * np.linalg.norm(resume_vector))
                 if similarity > .25:
                     # Execute the text generation request using a Gemma 3 model variant
+                    #force a buffer to not get over 15 request a min
+                    time.sleep(4.5)  
                     response = client.interactions.create(
                             model="gemini-3.5-flash-lite",
                             system_instruction=f"""ROLE
