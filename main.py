@@ -5,6 +5,7 @@ import os
 import numpy as np
 import requests
 import litellm
+import time
 
 from bs4 import BeautifulSoup
 from docx import Document
