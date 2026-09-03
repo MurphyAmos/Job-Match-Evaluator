@@ -502,7 +502,7 @@ def main(job_title, resume_docx=None, location = None):
                             print(f"{job_title}: {website} does not match requirements")
                     #if theres a problem with json output, write gemini response as text file for review 
                     except json.JSONDecodeError as e:
-                        with open(f"outputs/{job_title.replace('/',''}_Comparison_{i+1}.text", "w", encoding="utf-8") as f:
+                        with open(f"outputs/{job_title.replace('/','')}_Comparison_{i+1}.text", "w", encoding="utf-8") as f:
                             f.write(y)
 
                         continue
