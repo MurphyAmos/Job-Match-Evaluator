@@ -10,13 +10,18 @@ import time
 from bs4 import BeautifulSoup
 from docx import Document
 from google import genai
+from dotenv import load_dotenv
+
 from linkedin_scraper import BrowserManager, JobSearchScraper
 from litellm.types.utils import CallTypes
 
 os.makedirs("outputs", exist_ok=True)
 
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+load_dotenv()
 
+client = genai.Client(
+    api_key=os.environ["GEMINI_API_KEY"]
+)
 
 link_holder = []
 def get_job_details(url):
