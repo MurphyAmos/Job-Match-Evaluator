@@ -1,7 +1,9 @@
-requests
 numpy
-google-genai
-python-docx
-linkedin-scraper
+requests
 litellm
 beautifulsoup4
+python-docx
+google-genai
+python-dotenv
+linkedin-scraper
+playwright
